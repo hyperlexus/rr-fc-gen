@@ -4,6 +4,10 @@ generates all possible fcs with all pids
 # you need 26gb of space and like 12gb of ram!!!!
 
 ## how to use:
+- clone using pycharm or vscode
+- `pip install -r requirements.txt`
+
+
 - run [main.py](main.py)
 - wait for like 10 minutes
 - run [combine_chunks.py](combine_chunks.py) when done, takes like 3 minutes
