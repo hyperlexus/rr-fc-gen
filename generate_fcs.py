@@ -1,8 +1,9 @@
 import hashlib
 import json
-import os
+import multiprocessing
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
+import os
+
 
 def pid_to_fc(pid: int) -> int:
     if pid == 0: return 0
@@ -11,37 +12,59 @@ def pid_to_fc(pid: int) -> int:
     high = (hashlib.md5(buffer).digest()[0] >> 1)
     return (high << 32) | pid
 
-def generate_pid_fc_entry(pid: int, start_time, total_pids) -> dict:
-    if pid % max(100000, (total_pids/25)) == 0:
-        print(f"{pid} fcs generated. took {(time.time() - start_time) / 60:.2f} minutes since start")
-    return {str(pid): f"{pid_to_fc(pid):012}"}
 
-def generate_fcs(number_pids):
-    output_filename = "data.json"
+def generate_and_write_chunk(task_info):
+    file_index, start_pid, end_pid = task_info
+    process_id = os.getpid()
+    file_name = f"data_chunk_{file_index}.json"
 
-    if os.path.exists(output_filename):
-        os.remove(output_filename)
-        print(f"removed existing '{output_filename}'.")
+    print(f"[p{process_id}] starting {file_index}: pids {start_pid:,} to {end_pid - 1:,} into {file_name}")
 
-    genstring = f"generating fcs for {number_pids} pids... takes approximately {0.22*(number_pids/1000000) + 0.15*(number_pids/1000000):.2f} minutes."
-    print(genstring)
+    count = 0
+    with open(file_name, 'w') as f:
+        f.write('{')
+        is_first_item = True
+        for i in range(start_pid, end_pid):
+            if not is_first_item:
+                f.write(',')
+
+            key = str(i)
+            value = str(pid_to_fc(i)).zfill(12)
+
+            f.write(f'{json.dumps(key)}:{json.dumps(value)}')
+
+            is_first_item = False
+            count += 1
+
+        f.write('}')
+
+    print(f"[p{process_id}] task {file_index} finished: wrote {count:,} items to {file_name}")
+
+
+def generate_fcs():
+    TOTAL_PIDS = 1_000_000_000
+    NUM_FILES = 100
+    NUM_PROCESSES = 10
+
+    pids_per_file = TOTAL_PIDS // NUM_FILES
+
+    print(f"putting {TOTAL_PIDS:,} pids into {NUM_FILES} files with {pids_per_file:,} pids per file and using {NUM_PROCESSES} parallel processes.")
     start_time = time.time()
-    all_generated_data = []
 
-    with ThreadPoolExecutor(max_workers=os.cpu_count() * 2) as executor:
-        futures = {executor.submit(generate_pid_fc_entry, i, start_time, number_pids): i for i in range(1, number_pids + 1)}
+    tasks = []
+    for i in range(NUM_FILES):
+        file_index = i + 1
+        start_pid = i * pids_per_file + 1
+        end_pid = start_pid + pids_per_file
 
-        for i, future in enumerate(as_completed(futures), 1):
-            try:
-                result = future.result()
-                all_generated_data.append(result)
-            except Exception as e:
-                print(f"PID {futures[future]} generated an exception: {e}")
+        if file_index == NUM_FILES:
+            end_pid = TOTAL_PIDS + 1
 
-    all_generated_data.sort(key=lambda x: int(list(x.keys())[0]))
+        tasks.append((file_index, start_pid, end_pid))
 
-    with open(output_filename, 'w') as f:
-        json.dump(all_generated_data, f)
-    print(f"wrote {len(all_generated_data)} fcs to '{output_filename}'.")
+    # makes processes and distributes 100 tasks
+    with multiprocessing.Pool(processes=NUM_PROCESSES) as pool:
+        pool.map(generate_and_write_chunk, tasks)
 
-    print(f"done. took {(time.time() - start_time) / 60:.2f} minutes.")
+    end_time = time.time()
+    print(f"\n{NUM_FILES} files created successfully in {end_time - start_time:.2f} seconds. your poor cpu :(")
