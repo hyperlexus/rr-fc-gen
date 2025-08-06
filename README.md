@@ -1,5 +1,6 @@
 # rr-fc-gen
-generates all possible fcs with all pids
+generates all possible fcs with all pids.\
+if you want an fc applied to one of your licenses, dm me with your rksys.dat, the targeted license (1-4) and the friendcode you want. you can find your rksys by running !rksys in the #bots channel.
 
 # you need 52gb of space and like 12gb of ram!!!!
 
