@@ -81,13 +81,6 @@ class FriendCodeApp(tk.Tk):
         main_frame = ttk.Frame(self, padding="20")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        # --- progress bar ---
-        self.progress_label = ttk.Label(main_frame, text="progress: -")
-        self.progress_label.pack(pady=(5, 0))
-        self.progress_bar = ttk.Progressbar(main_frame, orient='horizontal', length=300, mode='determinate')
-        self.progress_bar.pack(pady=5, padx=10)
-        self.cancel_button = ttk.Button(main_frame, text="cancel", style="Cancel.TButton", command=self.cancel_operation)
-
         # --- fc gen ---
         gen_frame = ttk.LabelFrame(main_frame, text="1: generate all fcs (once)", padding="15")
         gen_frame.pack(fill=tk.X, expand=True)
@@ -117,6 +110,16 @@ class FriendCodeApp(tk.Tk):
 
         self.status_label = ttk.Label(self, text="ready", padding="10", relief=tk.SUNKEN)
         self.status_label.pack(side=tk.BOTTOM, fill=tk.X)
+
+        # --- progress bar ---
+        progress_frame = ttk.LabelFrame(main_frame, padding="15")
+        progress_frame.pack(fill=tk.X, expand=True)
+
+        self.progress_label = ttk.Label(progress_frame, text="progress: -")
+        self.progress_label.pack(pady=(5, 0))
+        self.progress_bar = ttk.Progressbar(progress_frame, orient='horizontal', length=300, mode='determinate')
+        self.progress_bar.pack(pady=5, padx=10)
+        self.cancel_button = ttk.Button(progress_frame, text="cancel", style="Cancel.TButton", command=self.cancel_operation)
 
     def process_queue(self):
         try:
