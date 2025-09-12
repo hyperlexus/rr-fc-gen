@@ -27,15 +27,11 @@ def generate_and_write_chunk(task_info):
         for i in range(start_pid, end_pid):
             if not is_first_item:
                 f.write(',')
-
             key = str(i)
             value = str(pid_to_fc(i)).zfill(12)
-
             f.write(f'{json.dumps(key)}:{json.dumps(value)}')
-
             is_first_item = False
             count += 1
-
         f.write('}')
 
     print(f"[p{process_id}] task {file_index} finished: wrote {count:,} items to {file_name}")

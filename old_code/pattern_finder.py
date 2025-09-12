@@ -32,11 +32,11 @@ def find_regex_pattern_to_json(input_filename, output_filename, regex_string):
                 scanned_count += 1
 
                 if pattern.fullmatch(fc_value):
+                    found_count += 1
                     if found_count < 51:
                         print(f"match number {found_count}! {pid} -> {fc_value}")
                     elif found_count % 100 == 0:
                         print(f"match number {found_count}! {pid} -> {fc_value}")
-                    found_count += 1
 
                     if not is_first_match:
                         outfile.write(',')
@@ -62,10 +62,10 @@ def find_regex_pattern_to_json(input_filename, output_filename, regex_string):
 
 
 if __name__ == "__main__":
-    input_file = "final_data.json"
+    input_file = "resources/final_data.json"
     output_file = "resources/matches.json"
 
     # regex pattern
-    REGEX_PATTERN_TO_FIND = r"^(?:(?=(?:[^0]*0){9}[^0]*$)|(?=(?:[^1]*1){9}[^1]*$)|(?=(?:[^2]*2){9}[^2]*$)|(?=(?:[^3]*3){9}[^3]*$)|(?=(?:[^4]*4){9}[^4]*$)|(?=(?:[^5]*5){9}[^5]*$)|(?=(?:[^6]*6){9}[^6]*$)|(?=(?:[^7]*7){9}[^7]*$)|(?=(?:[^8]*8){9}[^8]*$)|(?=(?:[^9]*9){9}[^9]*$))\d{12}$"
+    REGEX_PATTERN_TO_FIND = r"^(?=.*(\d)(?:[^\1]*\1){8}[^\1]*$)\d{12}$"
 
     find_regex_pattern_to_json(input_file, output_file, REGEX_PATTERN_TO_FIND)

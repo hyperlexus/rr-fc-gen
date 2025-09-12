@@ -1,7 +1,7 @@
 import glob
 import os
 import time
-import re  # <-- Added this import
+import re
 
 
 def combine_json_chunks():
@@ -15,7 +15,7 @@ def combine_json_chunks():
         print("you fucked it. the files dont exist. make sure to run the other one first")
         return
 
-    output_filename = 'final_data.json'
+    output_filename = 'resources/final_data.json'
     print(f"combining {len(chunk_files)}...")
     start_time = time.time()
 

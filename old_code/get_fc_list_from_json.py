@@ -25,6 +25,6 @@ def fclist(mode):
             f.write(entry + "\n")
 
 if __name__ == "__main__":
-    MODE = "narrowed"  # this has to be "normal" or "narrowed", depending on what you want to use
+    MODE = "normal"  # this has to be "normal" or "narrowed", depending on what you want to use
     fclist(MODE)
 

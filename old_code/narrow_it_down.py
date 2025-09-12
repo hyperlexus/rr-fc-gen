@@ -5,7 +5,7 @@ def narrow():
     output_file = "resources/narrowed_it_down.json"
 
     # regex pattern
-    REGEX_PATTERN_TO_FIND = r"^[^0]*(?:0[^0]*){0,8}$"
+    REGEX_PATTERN_TO_FIND = r"^(?=(?:[^0]*0){4})\d{12}$"
 
     find_regex_pattern_to_json(input_file, output_file, REGEX_PATTERN_TO_FIND)
 
