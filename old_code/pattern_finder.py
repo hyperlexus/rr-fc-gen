@@ -62,10 +62,10 @@ def find_regex_pattern_to_json(input_filename, output_filename, regex_string):
 
 
 if __name__ == "__main__":
-    input_file = "resources/final_data.json"
-    output_file = "resources/matches.json"
+    input_file = "../fc-gen-resources/final_data.txt"
+    output_file = "../fc-gen-resources/resources/matches.json"
 
     # regex pattern
-    REGEX_PATTERN_TO_FIND = r"^(?=.*(\d)(?:[^\1]*\1){8}[^\1]*$)\d{12}$"
+    REGEX_PATTERN_TO_FIND = r"^(?=(?:.*24){4})\d{12}$"
 
     find_regex_pattern_to_json(input_file, output_file, REGEX_PATTERN_TO_FIND)

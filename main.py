@@ -252,12 +252,14 @@ class FriendCodeApp(tk.Tk):
             start_time = time.time()
             self.thread_queue.put({"type": "status_update", "text": f"checking pattern and searching"})
             pattern = re.compile(pattern_str)
-            matches = {}
             matches_found = 0
-            last_update_time = time.time()
+            is_first_match = True
+            last_found_fc = "-"
 
-            with open(FINAL_DATA_FILE, 'r') as f:
-                for line_num, line in enumerate(f, 1):
+            with open(FINAL_DATA_FILE, 'r') as infile, open(MATCHES_FILE, 'w') as outfile:
+                outfile.write('{')
+
+                for line_num, line in enumerate(infile, 1):
                     if self.stop_event.is_set():
                         self.thread_queue.put({"type": "operation_cancelled"})
                         return
@@ -265,25 +267,25 @@ class FriendCodeApp(tk.Tk):
                     fc = line.strip()
                     if pattern.search(fc):
                         matches_found += 1
-                        # pid = line number (this saves like 7gb of space)
                         formatted_fc = format_fc(fc)
-                        matches[str(line_num)] = formatted_fc
+                        last_found_fc = formatted_fc
 
-                    current_time = time.time()
-                    if current_time - last_update_time >= 0.01:
-                        self.thread_queue.put({"type": "match_count_update", "count": matches_found})
-                        last_update_time = current_time
+                        if not is_first_match:
+                            outfile.write(',')
 
-                    if line_num % 100000 == 0:
-                        self.thread_queue.put({"type": "status_update", "text": f"scanned {line_num:,} codes..."})
+                        outfile.write(f'"{line_num}":{json.dumps(formatted_fc)}')
+                        is_first_match = False
+
+                    if line_num % 250000 == 0:
+                        status_text = f"scanned {line_num:,} codes... (last match: {last_found_fc})"
+                        self.thread_queue.put({"type": "status_update", "text": status_text})
                         self.thread_queue.put({"type": "progress", "current": line_num, "total": TOTAL_PIDS})
-
-            self.thread_queue.put({"type": "match_count_update", "count": len(matches)})
-            with open(MATCHES_FILE, 'w') as f:
-                json.dump(matches, f, indent=2)
+                        self.thread_queue.put({"type": "match_count_update", "count": matches_found})
+                outfile.write('}')
 
             end_time = time.time()
-            msg = f"found {len(matches):,} matches in {end_time - start_time:.2f}s."
+            msg = f"found {matches_found:,} matches in {end_time - start_time:.2f}s."
+            self.thread_queue.put({"type": "match_count_update", "count": matches_found})
             self.thread_queue.put({"type": "operation_complete", "text": msg})
         except Exception as e:
             self.thread_queue.put({"type": "error", "text": f"search failed: {e}"})
