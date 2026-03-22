@@ -1,0 +1,5 @@
+.idea/
+build/
+dist/
+fc-gen-resources/
+friendcode-finder.spec
