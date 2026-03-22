@@ -1,21 +1,32 @@
-# rr-fc-gen
-generates all possible fcs with all pids and lets you search them using patterns
-# you need ~~52gb~~ 13gb of space and like 12gb of ram!!!! 
-(holy optimization)
+# rr-fc-gen v2.0
+generates all possible fcs with all pids and lets you search them using SQL and patterns
+### note that this generates a database about 9.6GB in size.
 ## how to use:
 
 option 1: download the zip from releases, extract, read below and run\
-option 2: use from source:
+option 2: from source:
 - clone using pycharm or vscode
 - set up a python interpreter (venv)
 - `pip install -r requirements.txt`
+- run main.py
 
-this tool has completely changed since last time and now has a gui.
-1. click the "generate fcs" button and wait for it to be done, should take about 500-600 seconds depending on your pc
-2. enter a regex pattern (ask chatgpt to make you one according to your wishes or make it yourself) and search for codes that match
-3. click format matches.json to text and open the file, boom you can now search through fcs
+this tool received a huge update march 26 and now builds into a database.
+1. press the top button to generate and populate the database with all friend codes.
+2. use the number wheels to select how many of each digit your desired friend code should have.\
+searching this takes now about 3 seconds.
+3. you may additionally use regex patterns,
+this will be way slower but possibly output fcs more closely aligned with what you're looking for. 
+4. hit the search button.
+5. hit the format button, and check the fc-gen-resources folder for matches.txt
+6. enjoy your new friend code! for information on how to set it, check either:
+   - https://hyperlexus.uk/mkwii/fc
+   - https://hyperlexus.uk/mkwii/rksys (coming soon)
+   - https://github.com/hyperlexus/change-license-fc
+   - https://gabrlel.github.io/godtool.html
+   - Modified Torran is Silly!
+## make sure to check if a friend code is available before taking it!!!!
 
-enjoy!\
-<br>note it can sometimes be a little bit finnicky when generating (or sorting through) a billion fcs.\
-since it does everything in parallel, you might have to press the cancel button a few times,
-or when it shows 60/100 done but the file is already 14,000,000,000 bytes you can just close it
+notes:
+- it can look like it's not doing anything when generating, it takes a while and you can watch the file sizes growing.
+- regex is wonky, use regex helpers and patterns on stackoverflow to help with it, it sucks lol
+- credits to ki for helping develop this! ur amazing
