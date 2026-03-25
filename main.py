@@ -152,7 +152,7 @@ class FriendCodeApp(tk.Tk):
         self.progress_bar = ttk.Progressbar(progress_frame, orient='horizontal', length=400, mode='determinate')
         self.progress_bar.pack(side=tk.TOP, fill=tk.X)
 
-        self.cancel_button = ttk.Button(progress_frame, text="Cancel Operation", command=self.cancel_operation)
+        self.cancel_button = ttk.Button(progress_frame, text="cancel", command=self.cancel_operation)
 
         # generator
         gen_frame = ttk.LabelFrame(main_frame, text="create and populate database (once, about 10GB. takes ~15min)", padding="15")
@@ -184,7 +184,7 @@ class FriendCodeApp(tk.Tk):
             btn_up = ttk.Button(columnbina, text="▲", width=2, command=lambda idx=i: self.adjust_digit(idx, 1))
             btn_up.pack(side=tk.TOP)
 
-            val_label = ttk.Label(columnbina, text="Any", font=('Consolas', 11), anchor="center", width=3)
+            val_label = ttk.Label(columnbina, text="any", font=('Consolas', 11), anchor="center", width=3)
             val_label.pack(side=tk.TOP, pady=3)
             self.digit_labels[i] = val_label
 
@@ -230,7 +230,7 @@ class FriendCodeApp(tk.Tk):
                 self.progress_bar.stop()
                 self.progress_bar.config(mode='determinate', value=0)
             elif msg_type == "match_count_update":
-                self.match_count_label.config(text=f"matches found: {message['count']:,}")
+                self.match_count_label.config(text=f"matches found: {message['bool']}")
             elif msg_type == "operation_complete":
                 self.progress_bar.stop()
                 self.progress_label.config(text="")
@@ -257,15 +257,15 @@ class FriendCodeApp(tk.Tk):
 
     def start_generation_thread(self):
         if os.path.exists(DB_FILE):
-            if not messagebox.askyesno("Confirm", f"Database already exists. Re-generate?"):
+            if not messagebox.askyesno("are you sure bro", f"regenerate database? it already exists at {DB_FILE}"):
                 return
         self.set_ui_busy(True, show_cancel=True)
         self.stop_event.clear()
         threading.Thread(target=self.generate_codes_task, daemon=True).start()
 
     def start_search_thread(self):
-        self.match_count_label.config(text="Matches Found: 0")
-        self.set_ui_busy(True, show_cancel=True) # <--- Make sure this is True!
+        self.match_count_label.config(text="matches found: no")
+        self.set_ui_busy(True, show_cancel=True)
         self.stop_event.clear()
         threading.Thread(target=self.search_codes_task, daemon=True).start()
 
@@ -370,7 +370,7 @@ class FriendCodeApp(tk.Tk):
             query = "SELECT fc FROM fcs"
             if conditions:
                 query += " WHERE " + " AND ".join(conditions)
-
+                print(query)
             conn = duckdb.connect(DB_FILE)
             cursor = conn.execute(query)  # fetchall() very bad idea
 
@@ -380,6 +380,7 @@ class FriendCodeApp(tk.Tk):
 
             with open(MATCHES_FILE, 'w') as outfile:
                 outfile.write('{')
+                matches_ui_component_updated = False
 
                 while True:
                     if self.stop_event.is_set():
@@ -399,9 +400,9 @@ class FriendCodeApp(tk.Tk):
                                 continue
 
                         matches_found += 1
-
-                        if matches_found <= 50 or matches_found % 50 == 0:
-                            self.thread_queue.put({"type": "match_count_update", "count": matches_found})
+                        if matches_found and not matches_ui_component_updated:
+                            self.thread_queue.put({"type": "match_count_update", "bool": "yes"})
+                            matches_ui_component_updated = True
 
                         pid = fc_to_pid(fc)
                         formatted_fc = format_fc(fc)
@@ -422,7 +423,7 @@ class FriendCodeApp(tk.Tk):
             msg = f"found {matches_found:,} matches in {end_time - start_time:.4f}s."
 
             self.thread_queue.put({"type": "stop_indeterminate"})
-            self.thread_queue.put({"type": "match_count_update", "count": matches_found})
+            self.thread_queue.put({"type": "match_count_update", "bool": matches_found})
             self.thread_queue.put({"type": "operation_complete", "text": msg})
 
         except Exception as e:
