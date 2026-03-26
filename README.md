@@ -1,4 +1,4 @@
-# rr-fc-gen v2.0
+# rr-fc-gen v2.1
 generates all possible fcs with all pids and lets you search them using SQL and patterns
 ### note that this generates a database about 9.6GB in size.
 ## how to use:
@@ -30,3 +30,4 @@ notes:
 - it can look like it's not doing anything when generating, it takes a while and you can watch the file sizes growing.
 - regex is wonky, use regex helpers and patterns on stackoverflow to help with it, it sucks lol
 - credits to ki for helping develop this! ur amazing
+- if you want to compile the C code, use the CMakeLists.txt provided and build OpenSSL

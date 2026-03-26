@@ -8,10 +8,11 @@ import os
 import re
 import time
 from datetime import datetime
-import hashlib
 import multiprocessing
 import duckdb
 import random
+import ctypes
+import shutil
 
 TOTAL_PIDS = 1_000_000_000
 NUM_CHUNKS = 100
@@ -21,27 +22,20 @@ DB_FILE = 'fc-gen-resources/friend_codes.db'
 MATCHES_FILE = 'fc-gen-resources/matches.json'
 FORMATTED_MATCHES_FILE = 'fc-gen-resources/matches.txt'
 CHUNK_DIR = 'fc-gen-resources/temp_chunks'
-
+C_FILE = 'c_stuff/fc_gen.dll'
 
 # big thanks to ki for all the help <3
+# props to daniel for making the db half the size and the search 10x faster
 
-def pid_to_fc_and_mask(pid: int):
-    if pid == 0:
-        fc_str = "000000000000"
-    else:
-        pid_bytes = pid.to_bytes(4, byteorder='little', signed=False)
-        buffer = pid_bytes + b'JCMR'
-        high = (hashlib.md5(buffer).digest()[0] >> 1)
-        full_fc_int = (high << 32) | pid
-        fc_str = str(full_fc_int)[-12:].zfill(12)
-
-    # building a bitmask here, this shit is genius
-    mask = 0
-    for digit in range(10):
-        count = fc_str.count(str(digit))
-        mask |= (count << (digit * 4))
-
-    return fc_str, mask
+try:
+    c_lib = ctypes.CDLL(os.path.abspath(C_FILE))
+    c_lib.generate_csv_chunk.argtypes = [
+        ctypes.c_uint32,
+        ctypes.c_uint32,
+        ctypes.c_char_p
+    ]
+except Exception as e:
+    print(f"warn: {e}")
 
 
 def format_fc(fc_str: str) -> str:
@@ -54,13 +48,10 @@ def generate_and_write_chunk_task(task_info):
     file_index, start_pid, end_pid, chunk_dir = task_info
     file_name = os.path.join(chunk_dir, f"data_chunk_{file_index}.csv")
 
-    count = 0
-    with open(file_name, 'w') as f:
-        for i in range(start_pid, end_pid):
-            fc, mask = pid_to_fc_and_mask(i)
-            f.write(f"{fc},{mask}\n")
-            count += 1
-    return file_index, count
+    c_filepath = file_name.encode('utf-8')
+    c_lib.generate_csv_chunk(start_pid, end_pid, c_filepath)
+
+    return file_index, end_pid - start_pid
 
 
 class FriendCodeApp(tk.Tk):
@@ -321,15 +312,38 @@ class FriendCodeApp(tk.Tk):
             self.thread_queue.put({"type": "indeterminate_progress", "action": "combining chunks into db"})
 
             if os.path.exists(DB_FILE): os.remove(DB_FILE)
-            conn = duckdb.connect(DB_FILE)
-            conn.execute("CREATE TABLE fcs (fc VARCHAR(12), bitmask UBIGINT)")
-            conn.execute(f"COPY fcs FROM '{CHUNK_DIR}/*.csv' (FORMAT CSV)")
+
+            duckdb_tmp = os.path.join(CHUNK_DIR, 'duckdb_tmp')
+            if not os.path.exists(duckdb_tmp):
+                os.makedirs(duckdb_tmp)
+
+            conn = duckdb.connect(DB_FILE, config={
+                'temp_directory': duckdb_tmp,
+                'preserve_insertion_order': False
+            })
+
+            conn.execute(f"PRAGMA threads={NUM_PROCESSES}")
+            conn.execute("PRAGMA memory_limit='60GB'")
+            conn.execute("PRAGMA enable_progress_bar")
+
+            conn.execute(f"""
+                CREATE TABLE fcs AS 
+                SELECT fc, bitmask 
+                FROM read_csv('{CHUNK_DIR}/*.csv', 
+                    columns={{'fc': 'VARCHAR', 'bitmask': 'UBIGINT'}}, 
+                    header=false
+                ) 
+                ORDER BY bitmask
+            """)
             conn.close()
 
             # cleanup
             for i in range(NUM_CHUNKS):
                 chunk_path = os.path.join(CHUNK_DIR, f'data_chunk_{i}.csv')
                 if os.path.exists(chunk_path): os.remove(chunk_path)
+
+            if os.path.exists(duckdb_tmp):
+                shutil.rmtree(duckdb_tmp)
             os.rmdir(CHUNK_DIR)
 
             end_time = time.time()
@@ -370,7 +384,7 @@ class FriendCodeApp(tk.Tk):
             query = "SELECT fc FROM fcs"
             if conditions:
                 query += " WHERE " + " AND ".join(conditions)
-                print(query)
+
             conn = duckdb.connect(DB_FILE)
             cursor = conn.execute(query)  # fetchall() very bad idea
 

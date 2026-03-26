@@ -3,3 +3,5 @@ build/
 dist/
 fc-gen-resources/
 friendcode-finder.spec
+cmake-build-debug
+cmake-build-debug-visual-studio

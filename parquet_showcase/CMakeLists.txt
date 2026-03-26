@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.20)
+project(fc_gen C)
+set(CMAKE_C_STANDARD 99)
+find_package(OpenSSL REQUIRED)
+add_library(fc_gen SHARED fc_chunk_gen.c)
+target_link_libraries(fc_gen PRIVATE OpenSSL::Crypto)
+set_target_properties(fc_gen PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
