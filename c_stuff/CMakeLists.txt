@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.20)
 project(fc_gen C)
+if(MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
+endif()
 set(CMAKE_C_STANDARD 99)
 find_package(OpenSSL REQUIRED)
 add_library(fc_gen SHARED fc_chunk_gen.c)
